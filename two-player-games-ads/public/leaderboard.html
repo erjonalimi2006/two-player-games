@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Leaderboard</title>
+<link rel="stylesheet" href="/assets/styles.css"></head>
+<body>
+<header class="site-header"><h1>Leaderboard</h1><nav><a href="/">Home</a></nav></header>
+<main class="container">
+  <section class="game-card">
+    <label for="game">Select game</label>
+    <select id="game" style="width:100%;padding:8px;margin-top:8px">
+      <option value="rps">Rock Paper Scissors</option>
+      <option value="tictactoe4">TicTacToe4</option>
+      <option value="reaction">Reaction Duel</option>
+    </select>
+    <button class="btn" style="margin-top:8px" onclick="load()">Load Leaderboard</button>
+    <div id="list" style="margin-top:12px"></div>
+  </section>
+</main>
+<script>
+function load(){
+  const g = document.getElementById('game').value;
+  fetch('/api/leaderboard/'+g).then(r=>r.json()).then(j=>{
+    const container = document.getElementById('list');
+    container.innerHTML='';
+    if(!j || j.length===0){ container.textContent='No scores yet'; return }
+    const table = document.createElement('table'); table.style.width='100%';
+    j.forEach(row=>{
+      const tr = document.createElement('div'); tr.style.padding='6px'; tr.style.borderBottom='1px solid #eee';
+      tr.textContent = row.email + ' — ' + (row.numeric_score || row.score) + ' — ' + row.created_at;
+      container.appendChild(tr);
+    })
+  })
+}
+</script>
+</body>
+</html>

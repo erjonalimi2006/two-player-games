@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Othello</title><link rel="stylesheet" href="/assets/styles.css"><style>.grid{display:grid;grid-template-columns:repeat(4,60px);gap:6px}.cell{width:60px;height:60px;background:#0f1724;color:white;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:bold}</style></head><body>
+<main class="container"><h2>Othello Small</h2><div id="grid" class="grid"></div><p id="res"></p><div style="margin-top:12px"><a class="btn" href="/">Back</a></div></main>
+<script>
+const size=4; let board=Array(size*size).fill(null); // null empty, 'B' black, 'W' white
+const mid = [ (size/2-1)*size + size/2-1, (size/2-1)*size + size/2, (size/2)*size + size/2-1, (size/2)*size + size/2 ];
+board[mid[0]]='W'; board[mid[3]]='W'; board[mid[1]]='B'; board[mid[2]]='B';
+let current='B';
+const grid=document.getElementById('grid');
+function render(){ grid.innerHTML=''; for(let i=0;i<size*size;i++){ const d=document.createElement('div'); d.className='cell'; d.textContent=board[i]||''; d.onclick=(()=>play(i)); grid.appendChild(d); } document.getElementById('res').textContent='Turn: '+current; }
+function play(i){
+  if(board[i]) return;
+  const flips = getFlips(i,current);
+  if(flips.length===0) return;
+  board[i]=current; flips.forEach(idx=>board[idx]=current);
+  current = current==='B'?'W':'B';
+  if(!movesAvailable(current)){ end(); } render();
+}
+function getFlips(i,player){
+  const dirs=[-1,1,-size,size,-size-1,-size+1,size-1,size+1]; let flips=[];
+  const x=i%size, y=Math.floor(i/size);
+  for(const d of dirs){
+    let path=[]; let idx=i+d;
+    while(idx>=0 && idx<size*size){
+      const xx=idx%size, yy=Math.floor(idx/size);
+      if(Math.abs(xx-x)>1 && Math.abs(d)===1) break; // horizontal overflow
+      if(board[idx]==null) { path=[]; break; }
+      if(board[idx]!==player){ path.push(idx); idx+=d; continue; }
+      if(board[idx]===player){ flips=flips.concat(path); break; }
+    }
+  }
+  return flips;
+}
+function movesAvailable(player){
+  for(let i=0;i<size*size;i++) if(!board[i] && getFlips(i,player).length>0) return true;
+  return false;
+}
+function end(){
+  const counts = board.reduce((acc,c)=>{ if(c==='B') acc.B++; if(c==='W') acc.W++; return acc },{B:0,W:0});
+  const winner = counts.B>counts.W ? 'Black' : counts.W>counts.B ? 'White' : 'Draw';
+  document.getElementById('res').textContent = 'End. '+winner+' — B:'+counts.B+' W:'+counts.W;
+  saveScorePayload('othello', Math.max(counts.B, counts.W));
+}
+render();
+
+function saveScorePayload(game, numeric){
+  const token = localStorage.getItem('token');
+  const scoreVal = numeric!==undefined?numeric:1;
+  if(!token){ alert('Log in to save scores'); return; }
+  fetch('/api/score', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({game:game, score:String(scoreVal), numeric_score: Number(scoreVal)})
+  }).then(r=>r.json()).then(j=>alert(j.message||JSON.stringify(j)));
+}
+</script></body></html>

@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Battleship</title><link rel="stylesheet" href="/assets/styles.css"><style>.grid{display:grid;grid-template-columns:repeat(5,50px);gap:6px}.cell{width:50px;height:50px;background:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center}</style></head><body>
+<main class="container"><h2>Battleship (small)</h2>
+<p>Each player places a single 3-cell ship. Then guess.</p>
+<div style="display:flex;gap:12px;flex-wrap:wrap">
+  <div>
+    <h4>Player A place (3 cells)</h4>
+    <div class="grid" id="gridA"></div>
+    <button onclick="placeA()">Place A Random</button>
+  </div>
+  <div>
+    <h4>Player B place</h4>
+    <div class="grid" id="gridB"></div>
+    <button onclick="placeB()">Place B Random</button>
+  </div>
+</div>
+<p id="res"></p>
+<div style="margin-top:12px"><a class="btn" href="/">Back</a></div>
+</main>
+<script>
+const size=5;
+let A=Array(size*size).fill(0), B=Array(size*size).fill(0);
+let turn='A';
+function renderGrid(id,arr){ const el=document.getElementById(id); el.innerHTML=''; for(let i=0;i<size*size;i++){ const d=document.createElement('div'); d.className='cell'; d.textContent=''; d.onclick=(()=>shoot(id,i)); el.appendChild(d);} }
+function placeA(){ // random place 3 contiguous horizontal
+  A.fill(0); const r=Math.floor(Math.random()*size); const c=Math.floor(Math.random()*(size-2)); for(let i=0;i<3;i++) A[r*size+(c+i)]=1; renderGrid('gridA',A); }
+function placeB(){ B.fill(0); const r=Math.floor(Math.random()*size); const c=Math.floor(Math.random()*(size-2)); for(let i=0;i<3;i++) B[r*size+(c+i)]=1; renderGrid('gridB',B); }
+function shoot(gridId,i){
+  if(gridId==='gridA' && turn==='B'){ // B shoots A
+    if(A[i]===2) return;
+    if(A[i]===1){ A[i]=2; checkWin(); } else A[i]=2;
+    turn='A'; document.getElementById('res').textContent='A placed, B just shot.'; renderGrid('gridA',A);
+  } else if(gridId==='gridB' && turn==='A'){
+    if(B[i]===2) return;
+    if(B[i]===1){ B[i]=2; checkWin(); } else B[i]=2;
+    turn='B'; document.getElementById('res').textContent='B placed, A just shot.'; renderGrid('gridB',B);
+  }
+}
+function checkWin(){
+  if(A.filter(x=>x===2).length>=3){ document.getElementById('res').textContent='B wins'; saveScorePayload('battleship',1); }
+  if(B.filter(x=>x===2).length>=3){ document.getElementById('res').textContent='A wins'; saveScorePayload('battleship',1); }
+}
+renderGrid('gridA',A); renderGrid('gridB',B);
+
+function saveScorePayload(game, numeric){
+  const token = localStorage.getItem('token');
+  const scoreVal = numeric!==undefined?numeric:1;
+  if(!token){ alert('Log in to save scores'); return; }
+  fetch('/api/score', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({game:game, score:String(scoreVal), numeric_score: Number(scoreVal)})
+  }).then(r=>r.json()).then(j=>alert(j.message||JSON.stringify(j)));
+}
+</script></body></html>

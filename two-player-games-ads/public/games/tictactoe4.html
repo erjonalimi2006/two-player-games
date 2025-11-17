@@ -1,0 +1,83 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TicTacToe 4x4</title><link rel="stylesheet" href="/assets/styles.css"><style>.grid{display:grid;grid-template-columns:repeat(4,70px);gap:6px}.cell{width:70px;height:70px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;border-radius:6px;cursor:pointer}</style></head><body>
+<main class="container"><h2>Tic Tac Toe 4x4</h2><div id="turn">Turn: X</div><div class="grid" id="grid"></div><p id="res"></p><div style="margin-top:12px"><a class="btn" href="/">Back</a></div></main>
+<script>
+const grid=document.getElementById('grid'); let board=Array(16).fill(''); let current='X';
+function render(){grid.innerHTML=''; board.forEach((v,i)=>{const d=document.createElement('div');d.className='cell';d.textContent=v;d.onclick=()=>pick(i);grid.appendChild(d)})}
+function pick(i){ if(board[i])return; board[i]=current; if(board.every(Boolean)){ score(); return } current=current==='X'?'O':'X'; document.getElementById('turn').textContent='Turn: '+current; render();}
+function score(){
+  // count lines length 3 and 4
+  let scores={X:0,O:0};
+  const size=4;
+  // rows
+  for(let r=0;r<size;r++){
+    const row = board.slice(r*size, r*size+size);
+    analyzeLine(row, scores);
+  }
+  // cols
+  for(let c=0;c<size;c++){
+    const col=[];
+    for(let r=0;r<size;r++) col.push(board[r*size+c]);
+    analyzeLine(col,scores);
+  }
+  // main diagonals length4
+  let d1=[0,5,10,15].map(i=>board[i]);
+  let d2=[3,6,9,12].map(i=>board[i]);
+  analyzeLine(d1,scores); analyzeLine(d2,scores);
+  // also check all contiguous length-3 segments in rows and cols and diagonals
+  // rows segments
+  for(let r=0;r<size;r++){
+    for(let c=0;c<=1;c++){
+      analyzeLine([board[r*size+c],board[r*size+c+1],board[r*size+c+2]],scores,false);
+    }
+  }
+  // cols segments
+  for(let c=0;c<size;c++){
+    for(let r=0;r<=1;r++){
+      analyzeLine([board[(r)*size+c],board[(r+1)*size+c],board[(r+2)*size+c]],scores,false);
+    }
+  }
+  // diag 3-length segments (both directions)
+  const diag3 = [[0,5,10],[1,6,11],[4,9,14],[5,10,15],[3,6,9],[2,5,8],[7,10,13],[6,9,12]];
+  // above contains overlaps; we will scan all possible 3-length diagonals programmatically:
+  const dirs = [[1,5,9,13],[3,5,7,9]]; // not used - simpler approach below
+  // brute force all starting positions and directions for length 3 diagonals
+  const starts = [
+    [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+  ]; // dummy to iterate
+  // Instead we will enumerate known diag-3 positions:
+  const diag3pos = [[0,5,10],[1,6,11],[4,9,14],[5,10,15],[3,6,9],[2,5,8],[7,10,13],[6,9,12]];
+  diag3pos.forEach(arr=>analyzeLine(arr.map(i=>board[i]),scores,false));
+  document.getElementById('res').textContent='Score X: '+scores.X+' — Score O: '+scores.O;
+  const winner = scores.X>scores.O ? 'X' : scores.O>scores.X ? 'O' : 'Draw';
+  document.getElementById('res').textContent += ' — Winner: '+winner;
+  saveScorePayload('tictactoe4', Math.max(scores.X,scores.O));
+}
+
+function analyzeLine(arr,scores,allow4=true){
+  // arr is array of symbols length 3 or 4
+  if(arr.includes('') ) return;
+  if(arr.length===4){
+    if(arr.every(x=>x===arr[0])){
+      // 4 in row gives 3 points
+      scores[arr[0]] += 3;
+      return;
+    }
+    // also check 3-in-row inside 4? rules say 4 gives 3 points instead of two 3-in-row.
+    // So do not add 3-in-row if 4 detected.
+  } else if(arr.length===3){
+    if(arr.every(x=>x===arr[0])) scores[arr[0]] += 1;
+  }
+}
+render();
+
+function saveScorePayload(game, numeric){
+  const token = localStorage.getItem('token');
+  const scoreVal = numeric!==undefined?numeric:1;
+  if(!token){ alert('Log in to save scores'); return; }
+  fetch('/api/score', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({game:game, score:String(scoreVal), numeric_score: Number(scoreVal)})
+  }).then(r=>r.json()).then(j=>alert(j.message||JSON.stringify(j)));
+}
+</script></body></html>

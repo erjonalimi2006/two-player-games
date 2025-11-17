@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Color Memory</title><link rel="stylesheet" href="/assets/styles.css"><style>.btnc{display:inline-block;padding:12px;margin:6px;border-radius:8px;background:#ddd;cursor:pointer}</style></head><body>
+<main class="container"><h2>Color Memory</h2><p>Repeat sequence.</p><div id="seq"></div><div id="controls" style="margin-top:8px"><button onclick="show()">Show sequence</button></div><div id="res"></div><div style="margin-top:12px"><a class="btn" href="/">Back</a></div></main>
+<script>
+const colors=['red','green','blue','yellow']; let sequence=[]; let input=[];
+function show(){ sequence.push(colors[Math.floor(Math.random()*colors.length)]); document.getElementById('seq').textContent = 'Watch: '+sequence.join(', '); setTimeout(()=>{ document.getElementById('seq').innerHTML = colors.map((c,i)=> '<span class="btnc" onclick="pick(\''+c+'\')">'+c+'</span>').join(' ') },1000); input=[]; document.getElementById('res').textContent='Repeat now'; }
+function pick(c){ input.push(c); if(input.length===sequence.length){ if(input.join()==sequence.join()){ document.getElementById('res').textContent='Correct'; saveScorePayload('colormemory', sequence.length); } else document.getElementById('res').textContent='Wrong'; } }
+
+function saveScorePayload(game, numeric){
+  const token = localStorage.getItem('token');
+  const scoreVal = numeric!==undefined?numeric:1;
+  if(!token){ alert('Log in to save scores'); return; }
+  fetch('/api/score', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({game:game, score:String(scoreVal), numeric_score: Number(scoreVal)})
+  }).then(r=>r.json()).then(j=>alert(j.message||JSON.stringify(j)));
+}
+</script></body></html>

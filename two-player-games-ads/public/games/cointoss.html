@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Coin Toss</title><link rel="stylesheet" href="/assets/styles.css"></head><body>
+<main class="container"><h2>Coin Toss</h2>
+<p>Choose heads or tails, then toss.</p>
+<button onclick="toss('heads')">Heads</button>
+<button onclick="toss('tails')">Tails</button>
+<p id="res"></p>
+<div style="margin-top:12px"><a class="btn" href="/">Back</a></div></main>
+<script>
+function toss(choice){
+  const out = Math.random()<0.5?'heads':'tails';
+  const r = document.getElementById('res');
+  r.textContent = 'Result: '+out + (out===choice ? ' — You win' : ' — You lose');
+  if(out===choice) saveScorePayload('cointoss',1);
+}
+
+function saveScorePayload(game, numeric){
+  const token = localStorage.getItem('token');
+  const scoreVal = numeric!==undefined?numeric:1;
+  if(!token){ alert('Log in to save scores'); return; }
+  fetch('/api/score', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({game:game, score:String(scoreVal), numeric_score: Number(scoreVal)})
+  }).then(r=>r.json()).then(j=>alert(j.message||JSON.stringify(j)));
+}
+</script></body></html>

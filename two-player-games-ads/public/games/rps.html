@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RPS</title><link rel="stylesheet" href="/assets/styles.css"></head><body>
+<main class="container"><h2>Rock Paper Scissors</h2>
+<p>Player1 choose then Player2 choose.</p>
+<div id="info">Player 1 turn</div>
+<div style="margin-top:12px">
+<button onclick="choose('rock')">Rock</button>
+<button onclick="choose('paper')">Paper</button>
+<button onclick="choose('scissors')">Scissors</button>
+</div>
+<p id="res"></p>
+<div style="margin-top:12px"><a class="btn" href="/">Back</a></div>
+</main>
+<script>
+let p1=null,p2=null,turn=1;
+function choose(c){
+  if(turn===1){p1=c; document.getElementById('info').textContent='Player 2 turn'; turn=2; return;}
+  p2=c; decide(); turn=1; document.getElementById('info').textContent='Player 1 turn';
+}
+function decide(){
+  const r=document.getElementById('res');
+  if(p1===p2){ r.textContent='Draw'; saveScore(); return; }
+  if((p1==='rock'&&p2==='scissors')||(p1==='paper'&&p2==='rock')||(p1==='scissors'&&p2==='paper')){ r.textContent='Player 1 wins'; saveScorePayload('rps',1); }
+  else { r.textContent='Player 2 wins'; saveScorePayload('rps',1); }
+  p1=p2=null;
+}
+
+function saveScorePayload(game, numeric){
+  const token = localStorage.getItem('token');
+  const scoreVal = numeric!==undefined?numeric:1;
+  if(!token){ alert('Log in to save scores'); return; }
+  fetch('/api/score', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({game:game, score:String(scoreVal), numeric_score: Number(scoreVal)})
+  }).then(r=>r.json()).then(j=>alert(j.message||JSON.stringify(j)));
+}
+</script></body></html>

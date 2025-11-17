@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Connect Four</title><link rel="stylesheet" href="/assets/styles.css"><style>.grid{display:grid;grid-template-columns:repeat(7,50px);gap:6px}.cell{width:50px;height:50px;background:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center}</style></head><body>
+<main class="container"><h2>Connect Four</h2><div id="turn">Turn: R</div><div class="grid" id="grid"></div><p id="res"></p><div style="margin-top:12px"><a class="btn" href="/">Back</a></div></main>
+<script>
+const cols=7, rows=6; let board=Array(cols).fill().map(()=>Array(rows).fill('')); let current='R'; const grid=document.getElementById('grid');
+function render(){
+  grid.innerHTML='';
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const d=document.createElement('div'); d.className='cell'; d.textContent=board[c][r]; d.onclick=(()=>drop(c)); grid.appendChild(d);
+    }
+  }
+}
+function drop(c){
+  for(let r=rows-1;r>=0;r--){ if(!board[c][r]){ board[c][r]=current; if(checkWin(c,r)){ document.getElementById('res').textContent=current+' wins'; saveScorePayload('connect4',1); } current=current==='R'?'Y':'R'; document.getElementById('turn').textContent='Turn: '+current; render(); return; } }
+}
+function checkWin(c,r){
+  const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+  for(const [dx,dy] of dirs){
+    let cnt=1;
+    for(let s=1;s<4;s++){ const x=c+dx*s, y=r+dy*s; if(x<0||y<0||x>=cols||y>=rows||board[x][y]!==board[c][r]) break; cnt++; }
+    for(let s=1;s<4;s++){ const x=c-dx*s, y=r-dy*s; if(x<0||y<0||x>=cols||y>=rows||board[x][y]!==board[c][r]) break; cnt++; }
+    if(cnt>=4) return true;
+  }
+  return false;
+}
+render();
+
+function saveScorePayload(game, numeric){
+  const token = localStorage.getItem('token');
+  const scoreVal = numeric!==undefined?numeric:1;
+  if(!token){ alert('Log in to save scores'); return; }
+  fetch('/api/score', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({game:game, score:String(scoreVal), numeric_score: Number(scoreVal)})
+  }).then(r=>r.json()).then(j=>alert(j.message||JSON.stringify(j)));
+}
+</script></body></html>

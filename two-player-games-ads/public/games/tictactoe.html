@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TicTacToe</title><link rel="stylesheet" href="/assets/styles.css"><style>.grid{display:grid;grid-template-columns:repeat(3,80px);gap:6px}.cell{width:80px;height:80px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;border-radius:6px;cursor:pointer}</style></head><body>
+<main class="container"><h2>Tic Tac Toe</h2><div id="turn">Turn: X</div><div class="grid" id="grid"></div><p id="res"></p><div style="margin-top:12px"><a class="btn" href="/">Back</a></div></main>
+<script>
+const grid=document.getElementById('grid'); let board=Array(9).fill(''); let current='X';
+function render(){grid.innerHTML=''; board.forEach((v,i)=>{const d=document.createElement('div');d.className='cell';d.textContent=v;d.onclick=()=>pick(i);grid.appendChild(d)})}
+function pick(i){ if(board[i])return; board[i]=current; if(check()) return; current=current==='X'?'O':'X'; document.getElementById('turn').textContent='Turn: '+current; render();}
+function check(){ const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; for(const l of lines){ const [a,b,c]=l; if(board[a]&&board[a]===board[b]&&board[b]===board[c]){ document.getElementById('res').textContent=board[a]+' wins'; saveScorePayload('tictactoe',1); return true } } if(board.every(Boolean)){ document.getElementById('res').textContent='Draw'; return true } return false }
+render();
+
+function saveScorePayload(game, numeric){
+  const token = localStorage.getItem('token');
+  const scoreVal = numeric!==undefined?numeric:1;
+  if(!token){ alert('Log in to save scores'); return; }
+  fetch('/api/score', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({game:game, score:String(scoreVal), numeric_score: Number(scoreVal)})
+  }).then(r=>r.json()).then(j=>alert(j.message||JSON.stringify(j)));
+}
+</script></body></html>

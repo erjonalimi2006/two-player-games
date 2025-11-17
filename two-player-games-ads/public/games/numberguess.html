@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Number Guess</title><link rel="stylesheet" href="/assets/styles.css"></head><body>
+<main class="container"><h2>Number Guess</h2>
+<p>Player A chooses a number 1-100. Player B guesses.</p>
+<div><input id="num" placeholder="Set number (A)"><button onclick="setNum()">Set</button></div>
+<div style="margin-top:8px"><input id="g" placeholder="Guess (B)"><button onclick="guess()">Guess</button></div>
+<p id="res"></p>
+<div style="margin-top:12px"><a class="btn" href="/">Back</a></div>
+</main>
+<script>
+let secret=null, attempts=0;
+function setNum(){ secret=Number(document.getElementById('num').value); attempts=0; document.getElementById('res').textContent='Number set'; }
+function guess(){ if(secret===null) return; attempts++; const g=Number(document.getElementById('g').value); if(g===secret){ document.getElementById('res').textContent='Correct in '+attempts+' attempts'; saveScorePayload('numberguess', Math.max(0, 100-attempts)); secret=null; } else document.getElementById('res').textContent= g<secret ? 'Higher' : 'Lower'; }
+
+function saveScorePayload(game, numeric){
+  const token = localStorage.getItem('token');
+  const scoreVal = numeric!==undefined?numeric:1;
+  if(!token){ alert('Log in to save scores'); return; }
+  fetch('/api/score', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({game:game, score:String(scoreVal), numeric_score: Number(scoreVal)})
+  }).then(r=>r.json()).then(j=>alert(j.message||JSON.stringify(j)));
+}
+</script></body></html>
